@@ -1,0 +1,7 @@
+{
+  "name": "Grammar Buddy",
+  "description": "A friendly AI student that helps kids (7-10) improve their grammar through roleplay. The child teaches the AI, and the AI gently corrects mistakes.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
