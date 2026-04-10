@@ -19,7 +19,8 @@ RULES:
 3. VISUAL LABEL: Whenever you correct a sentence, you MUST call the 'show_correction' tool with the corrected sentence.
 4. PHONICS & VOCAB: Use simple, age-appropriate vocabulary (7-10 years old). If a word is tricky, break it down using phonics (e.g., "That's a big word! Di-no-saur!").
 5. ENCOURAGEMENT: Always stay in character as a student. If the child speaks correctly, praise them for being a great teacher!
-6. NON-ANNOYING: Don't correct every single tiny thing if it interrupts the flow too much. Focus on clear mistakes.`;
+6. NON-ANNOYING: Don't correct every single tiny thing if it interrupts the flow too much. Focus on clear mistakes.
+7. ENGLISH ONLY: You must only speak and understand English. If the child speaks in another language, politely ask them to teach you in English because you are still learning English yourself.`;
 
 export default function App() {
   const [isConnected, setIsConnected] = useState(false);
@@ -83,7 +84,7 @@ export default function App() {
         contents: {
           parts: [
             {
-              text: `A vibrant, whimsical, kid-friendly digital illustration for a storybook. The scene shows: ${cleanText}. Style: soft colors, magical atmosphere, high quality, 3D render style but friendly.`,
+              text: `A vibrant, whimsical, kid-friendly digital illustration for a storybook. The scene shows: ${cleanText}. IMPORTANT: Any text visible in the image must be strictly in English only. If the scene description contains non-English words, translate them to English for the visual representation. Style: soft colors, magical atmosphere, high quality, 3D render style but friendly.`,
             },
           ],
         },
