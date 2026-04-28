@@ -6,7 +6,7 @@ export class AudioProcessor {
   private audioContext: AudioContext | null = null;
   private stream: MediaStream | null = null;
   private source: MediaStreamAudioSourceNode | null = null;
-  private processor: AudioWorkletNode | null = null;
+  private scriptNode: ScriptProcessorNode | null = null;
   private onAudioData: (base64Data: string) => void;
 
   constructor(onAudioData: (base64Data: string) => void) {
@@ -21,23 +21,24 @@ export class AudioProcessor {
     this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     this.source = this.audioContext.createMediaStreamSource(this.stream);
 
-    // We use a simple script processor for now as it's easier to implement without external files
-    // In a production app, an AudioWorklet is preferred.
     const bufferSize = 4096;
-    const scriptNode = this.audioContext.createScriptProcessor(bufferSize, 1, 1);
-    
-    scriptNode.onaudioprocess = (e) => {
+    this.scriptNode = this.audioContext.createScriptProcessor(bufferSize, 1, 1);
+
+    this.scriptNode.onaudioprocess = (e) => {
       const inputData = e.inputBuffer.getChannelData(0);
       const pcmData = this.floatTo16BitPCM(inputData);
       const base64Data = this.arrayBufferToBase64(pcmData);
       this.onAudioData(base64Data);
     };
 
-    this.source.connect(scriptNode);
-    scriptNode.connect(this.audioContext.destination);
+    this.source.connect(this.scriptNode);
+    this.scriptNode.connect(this.audioContext.destination);
   }
 
   stop() {
+    this.source?.disconnect();
+    this.scriptNode?.disconnect();
+    this.scriptNode = null;
     this.stream?.getTracks().forEach(track => track.stop());
     if (this.audioContext && this.audioContext.state !== 'closed') {
       this.audioContext.close();
@@ -68,12 +69,14 @@ export class AudioProcessor {
 export class AudioPlayer {
   private audioContext: AudioContext;
   private nextStartTime: number = 0;
+  private activeSources: AudioBufferSourceNode[] = [];
 
   constructor() {
     this.audioContext = new AudioContext({ sampleRate: 24000 });
   }
 
   async playChunk(base64Data: string) {
+    if (this.audioContext.state === 'closed') return;
     if (this.audioContext.state === 'suspended') {
       await this.audioContext.resume();
     }
@@ -82,7 +85,7 @@ export class AudioPlayer {
     for (let i = 0; i < binary.length; i++) {
       bytes[i] = binary.charCodeAt(i);
     }
-    
+
     const pcmData = new Int16Array(bytes.buffer);
     const floatData = new Float32Array(pcmData.length);
     for (let i = 0; i < pcmData.length; i++) {
@@ -95,16 +98,28 @@ export class AudioPlayer {
     const source = this.audioContext.createBufferSource();
     source.buffer = audioBuffer;
     source.connect(this.audioContext.destination);
+    this.activeSources.push(source);
+    source.onended = () => {
+      this.activeSources = this.activeSources.filter(s => s !== source);
+    };
 
     const startTime = Math.max(this.audioContext.currentTime, this.nextStartTime);
     source.start(startTime);
     this.nextStartTime = startTime + audioBuffer.duration;
   }
 
+  // Stop current playback but keep the AudioContext alive for future chunks
   stop() {
+    this.activeSources.forEach(s => { try { s.stop(); } catch {} });
+    this.activeSources = [];
+    this.nextStartTime = 0;
+  }
+
+  // Full teardown — call only when the session ends
+  close() {
+    this.stop();
     if (this.audioContext.state !== 'closed') {
       this.audioContext.close();
     }
-    this.nextStartTime = 0;
   }
 }
