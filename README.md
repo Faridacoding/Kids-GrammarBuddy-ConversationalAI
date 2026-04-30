@@ -1,6 +1,6 @@
 # Grammar Buddy
 
-An AI-powered grammar learning app for children ages 7–10, where kids learn by teaching an AI student named Buddy.
+An AI-powered grammar learning app for children ages 7–10, where kids learn by teaching an AI student named Buddy. At the end of the interaction both the parent and the kid take away a memorabilia(PDF) of the child's conversation with the AI. Sample PDF(**Story about Sky.pdf**)added in the repo.
 
 ---
 
